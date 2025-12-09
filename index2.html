@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/3/34/Icon_hacker.png">
+    <title>OpenBugBounty Domain Search</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 80, 0, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(0, 100, 0, 0.05) 0%, transparent 20%);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 30px;
+            border-radius: 15px;
+            background-color: rgba(17, 17, 17, 0.95);
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            border: 1px solid #004d00;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        h1 {
+            font-size: 42px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            position: relative;
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            text-align: center;
+        }
+
+        h1::after {
+            content: '_';
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .subtitle {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #88ff88;
+            font-size: 14px;
+        }
+
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+            padding: 15px;
+            border: 2px solid #006600;
+            border-radius: 8px;
+            background-color: #111;
+            color: #00ff00;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 25px 0;
+        }
+
+        button {
+            padding: 12px 30px;
+            background-color: #003300;
+            color: #00ff00;
+            border: 1px solid #006600;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background-color: #006600;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(0, 255, 0, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        button:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(40, 40);
+                opacity: 0;
+            }
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            background-color: #111;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 25px 0;
+            border: 1px solid #004d00;
+        }
+
+        .stat-box {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #00ff00;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #88ff88;
+        }
+
+        .results-container {
+            margin-top: 30px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #004d00;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #0a0a0a;
+        }
+
+        .result-group {
+            margin-bottom: 15px;
+            border-radius: 5px;
+            padding: 15px;
+            transition: transform 0.2s;
+        }
+
+        .result-group:hover {
+            transform: translateX(5px);
+        }
+
+        .group-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #004d00;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .domain-count {
+            background-color: #003300;
+            color: #00ff00;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .result-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            background-color: rgba(0, 30, 0, 0.2);
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .result-item:hover {
+            background-color: rgba(0, 60, 0, 0.4);
+        }
+
+        .result-item a {
+            color: #00ff00;
+            text-decoration: none;
+            display: block;
+            word-break: break-all;
+        }
+
+        .result-item a:hover {
+            color: #88ff88;
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-style: italic;
+        }
+
+        .powered-by {
+            margin-top: 40px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #222;
+            padding-top: 20px;
+        }
+
+        /* Scrollbar styling */
+        .results-container::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .results-container::-webkit-scrollbar-track {
+            background: #111;
+            border-radius: 5px;
+        }
+
+        .results-container::-webkit-scrollbar-thumb {
+            background: #004d00;
+            border-radius: 5px;
+        }
+
+        .results-container::-webkit-scrollbar-thumb:hover {
+            background: #006600;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 32px;
+            }
+            
+            .stats-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .button-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenBugBounty</h1>
+        <div class="subtitle">Domain Search & Analysis Tool</div>
+        
+        <div class="input-section">
+            <textarea id="inputTextArea" rows="10" placeholder="Paste your text with domains here (e.g., example.com, test.org, sub.domain.net)"></textarea>
+        </div>
+        
+        <div class="button-container">
+            <button onclick="searchDomains()">Search Domains</button>
+            <button onclick="clearAll()">Clear All</button>
+            <button onclick="loadSample()">Load Sample</button>
+        </div>
+        
+        <div class="stats-container" id="statsContainer" style="display: none;">
+            <div class="stat-box">
+                <div class="stat-value" id="totalDomains">0</div>
+                <div class="stat-label">Total Domains</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="uniqueDomains">0</div>
+                <div class="stat-label">Unique Domains</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="uniqueTlds">0</div>
+                <div class="stat-label">Unique TLDs</div>
+            </div>
+        </div>
+        
+        <div class="results-container" id="results"></div>
+        
+        <p class="powered-by">Powered by Secure Startups LLC | OpenBugBounty Domain Search Tool v1.2</p>
+    </div>
+
+    <script>
+        function searchDomains() {
+            var inputTextArea = document.getElementById("inputTextArea");
+            var text = inputTextArea.value;
+            
+            // Enhanced regex to capture domains more accurately
+            var domainRegex = /\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b/g;
+            var domains = text.match(domainRegex);
+            
+            var resultsContainer = document.getElementById("results");
+            var statsContainer = document.getElementById("statsContainer");
+            
+            // Clear previous results
+            resultsContainer.innerHTML = "";
+            
+            if (!domains || domains.length === 0) {
+                resultsContainer.innerHTML = '<div class="empty-state">No domains found in the input text.</div>';
+                statsContainer.style.display = "none";
+                return;
+            }
+            
+            // Process domains
+            var uniqueDomains = [...new Set(domains.map(d => d.toLowerCase()))];
+            var domainGroups = {};
+            var tldSet = new Set();
+            
+            // Group domains by their top-level domain (last two parts)
+            uniqueDomains.forEach(function(domain) {
+                var parts = domain.split('.');
+                if (parts.length >= 2) {
+                    var tld = parts.slice(-2).join('.'); // Get last two parts
+                    tldSet.add(tld);
+                    
+                    if (!domainGroups[tld]) {
+                        domainGroups[tld] = [];
+                    }
+                    
+                    if (!domainGroups[tld].includes(domain)) {
+                        domainGroups[tld].push(domain);
+                    }
+                }
+            });
+            
+            // Sort TLDs alphabetically
+            var sortedTlds = Object.keys(domainGroups).sort();
+            
+            // Generate color for each TLD group
+            var colors = [
+                '#003300', '#004d00', '#006600', '#008000', '#009900',
+                '#00b300', '#00cc00', '#00e600', '#00ff00', '#1aff1a'
+            ];
+            
+            // Display results grouped by TLD
+            sortedTlds.forEach(function(tld, index) {
+                var resultGroup = document.createElement("div");
+                resultGroup.classList.add("result-group");
+                
+                // Assign color based on index
+                var colorIndex = index % colors.length;
+                resultGroup.style.backgroundColor = colors[colorIndex];
+                resultGroup.style.color = '#ffffff';
+                
+                // Group header
+                var groupHeader = document.createElement("div");
+                groupHeader.classList.add("group-header");
+                groupHeader.innerHTML = `<span>${tld.toUpperCase()}</span><span class="domain-count">${domainGroups[tld].length} domains</span>`;
+                resultGroup.appendChild(groupHeader);
+                
+                // Domain items
+                domainGroups[tld].forEach(function(domain) {
+                    var resultItem = document.createElement("div");
+                    resultItem.classList.add("result-item");
+                    
+                    var link = document.createElement("a");
+                    link.href = `https://www.openbugbounty.org/search/?search=${encodeURIComponent(domain)}&researcher=&program=`;
+                    link.target = "_blank";
+                    link.textContent = domain;
+                    
+                    resultItem.appendChild(link);
+                    resultGroup.appendChild(resultItem);
+                });
+                
+                resultsContainer.appendChild(resultGroup);
+            });
+            
+            // Update stats
+            document.getElementById("totalDomains").textContent = domains.length;
+            document.getElementById("uniqueDomains").textContent = uniqueDomains.length;
+            document.getElementById("uniqueTlds").textContent = tldSet.size;
+            
+            // Show stats container
+            statsContainer.style.display = "flex";
+            
+            // Scroll to results
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function clearAll() {
+            document.getElementById("inputTextArea").value = "";
+            document.getElementById("results").innerHTML = "";
+            document.getElementById("statsContainer").style.display = "none";
+        }
+        
+        function loadSample() {
+            var sampleText = `Here are some example domains for testing:
+
+example.com
+test.org
+sub.domain.net
+github.com
+openbugbounty.org
+security-test.co.uk
+another-test.io
+example-domain.com
+test-site.org
+mydomain.net
+
+You can also find domains in URLs:
+https://www.google.com/search?q=test
+http://example.org/path
+https://subdomain.test.co.uk/page
+
+Email addresses also contain domains:
+user@example.com
+admin@test.org
+support@mycompany.net`;
+
+            document.getElementById("inputTextArea").value = sampleText;
+        }
+        
+        // Add event listener for Enter key in textarea
+        document.getElementById("inputTextArea").addEventListener("keydown", function(e) {
+            if (e.ctrlKey && e.key === "Enter") {
+                searchDomains();
+            }
+        });
+        
+        // Add some initial instructions
+        window.onload = function() {
+            var inputTextArea = document.getElementById("inputTextArea");
+            inputTextArea.focus();
+        };
+    </script>
+</body>
+</html>
